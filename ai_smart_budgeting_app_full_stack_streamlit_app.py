@@ -1,7 +1,7 @@
 
 # =============================================
-# AI-DRIVEN SMART BUDGETING APP — FINAL VERSION
-# Supports: URL Params + Auto Prediction + Mode Control
+# AI-DRIVEN SMART BUDGETING APP — DUAL MODE VERSION
+# Flutter (lightweight) + Web (full dashboard)
 # =============================================
 
 import streamlit as st
@@ -130,11 +130,10 @@ df["User_Type"] = kmeans.fit_predict(cluster_features)
 # URL PARAMS
 # =============================================
 params = st.query_params
-mode = params.get("mode", "full")       # full / prediction
-auto_run = params.get("auto", "false") == "true"
+mode = params.get("mode", "full")   # prediction / full
 
 # =============================================
-# INPUT HANDLING (SAFE DEFAULTS)
+# INPUT (NO UI — URL ONLY)
 # =============================================
 def get_user_input():
     user_input = {}
@@ -154,10 +153,18 @@ def get_user_input():
     return user_input
 
 # =============================================
-# PREDICTION UI
+# PREDICTION
 # =============================================
 def run_prediction(user_input):
     user_df = pd.DataFrame([user_input])
+
+    # Ensure all columns exist
+    for col in df.drop(["Total_Potential_Savings","User_Type"], axis=1).columns:
+        if col not in user_df.columns:
+            user_df[col] = df[col].mean()
+
+    user_df = user_df[df.drop(["Total_Potential_Savings","User_Type"], axis=1).columns]
+
     user_scaled = scaler.transform(user_df)
     prediction = best_model.predict(user_scaled)[0]
 
@@ -166,48 +173,48 @@ def run_prediction(user_input):
     score = min(100, (prediction / user_input.get("Income",1)) * 200)
     st.metric("💎 Financial Health Score", f"{score:.1f}/100")
 
-    cats = ["Groceries","Transport","Eating_Out","Entertainment","Utilities","Healthcare","Miscellaneous"]
-    vals = [user_input.get(c,0) for c in cats]
+    # 🔥 Only show heavy UI in FULL mode
+    if mode != "prediction":
+        cats = ["Groceries","Transport","Eating_Out","Entertainment","Utilities","Healthcare","Miscellaneous"]
+        vals = [user_input.get(c,0) for c in cats]
 
-    radar = go.Figure(go.Scatterpolar(r=vals, theta=cats, fill='toself'))
-    radar.update_layout(title="Expense Distribution")
-    st.plotly_chart(radar, use_container_width=True)
+        radar = go.Figure(go.Scatterpolar(r=vals, theta=cats, fill='toself'))
+        radar.update_layout(title="Expense Distribution")
+        st.plotly_chart(radar, use_container_width=True)
 
-    st.subheader("🧠 AI Budget Recommendations")
-    recs = generate_recommendations(user_df)
-    for r in recs:
-        st.markdown(r)
+        st.subheader("🧠 AI Budget Recommendations")
+        recs = generate_recommendations(user_df)
+        for r in recs:
+            st.markdown(r)
 
-    gauge = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=prediction,
-        title={'text': "Savings Potential"},
-        gauge={'axis': {'range': [0, df['Total_Potential_Savings'].max()]}}
-    ))
-    st.plotly_chart(gauge, use_container_width=True)
+        gauge = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=prediction,
+            title={'text': "Savings Potential"},
+            gauge={'axis': {'range': [0, df['Total_Potential_Savings'].max()]}}
+        ))
+        st.plotly_chart(gauge, use_container_width=True)
 
 # =============================================
-# MODE: ONLY PREDICTION (FOR FLUTTER)
+# APP ENTRY
 # =============================================
 if mode == "prediction":
-    st.title("🔮 Smart Prediction")
+    # 🔥 Flutter mode → minimal UI
+    if len(params) == 0:
+        st.stop()
 
-    user_input = get_user_input()
+    run_prediction(get_user_input())
 
-    if st.button("Predict Savings") or (auto_run and len(params) > 0):
-        run_prediction(user_input)
-
-# =============================================
-# FULL APP MODE
-# =============================================
 else:
+    # 🌐 Web mode → full dashboard
     st.title("💰 AI-Driven Smart Budgeting App")
 
-    st.subheader("Predict & Optimize Savings")
-    run_prediction(get_user_input())
+    user_input = get_user_input()
+    run_prediction(user_input)
 
 # =============================================
 # FOOTER
 # =============================================
-st.markdown("---")
-st.markdown("🚀 AI Smart Budgeting System | Flutter + Streamlit + ML")
+if mode != "prediction":
+    st.markdown("---")
+    st.markdown("🚀 AI Smart Budgeting System | Flutter + Streamlit + ML")
