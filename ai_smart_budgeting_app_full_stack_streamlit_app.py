@@ -140,19 +140,16 @@ def get_user_input():
     user_input = {}
     feature_cols = df.drop(["Total_Potential_Savings","User_Type"], axis=1).columns
 
-    def safe_get_param(col, default):
-        value = params.get(col)
-        if value is None or value == "":
-            return default
-        try:
-            return float(value)
-        except:
-            return default
-
     for col in feature_cols:
-        default_val = float(df[col].mean())
-        default_val = safe_get_param(col, default_val)
-        user_input[col] = st.number_input(col, value=default_val)
+        value = params.get(col)
+
+        if value is None or value == "":
+            user_input[col] = float(df[col].mean())
+        else:
+            try:
+                user_input[col] = float(value)
+            except:
+                user_input[col] = float(df[col].mean())
 
     return user_input
 
