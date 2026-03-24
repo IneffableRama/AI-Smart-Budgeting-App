@@ -170,7 +170,7 @@ def run_prediction(user_input):
 
     st.success(f"💸 Estimated Monthly Savings: ₹ {prediction:,.2f}")
 
-   income = user_input.get("Income", 0)
+    income = user_input.get("Income", 0)
 
 expense_cols = [
     "Groceries","Transport","Eating_Out",
@@ -196,26 +196,26 @@ else:
 st.metric("💎 Financial Health Score", f"{score:.1f}/100")
 
     # 🔥 Only show heavy UI in FULL mode
-    if mode != "prediction":
-        cats = ["Groceries","Transport","Eating_Out","Entertainment","Utilities","Healthcare","Miscellaneous"]
-        vals = [user_input.get(c,0) for c in cats]
+if mode != "prediction":
+    cats = ["Groceries","Transport","Eating_Out","Entertainment","Utilities","Healthcare","Miscellaneous"]
+    vals = [user_input.get(c,0) for c in cats]
 
-        radar = go.Figure(go.Scatterpolar(r=vals, theta=cats, fill='toself'))
-        radar.update_layout(title="Expense Distribution")
-        st.plotly_chart(radar, use_container_width=True)
+    radar = go.Figure(go.Scatterpolar(r=vals, theta=cats, fill='toself'))
+    radar.update_layout(title="Expense Distribution")
+    st.plotly_chart(radar, use_container_width=True)
 
-        st.subheader("🧠 AI Budget Recommendations")
-        recs = generate_recommendations(user_df)
-        for r in recs:
-            st.markdown(r)
+    st.subheader("🧠 AI Budget Recommendations")
+    recs = generate_recommendations(user_df)
+    for r in recs:
+        st.markdown(r)
 
-        gauge = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=prediction,
-            title={'text': "Savings Potential"},
-            gauge={'axis': {'range': [0, df['Total_Potential_Savings'].max()]}}
-        ))
-        st.plotly_chart(gauge, use_container_width=True)
+    gauge = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=prediction,
+        title={'text': "Savings Potential"},
+        gauge={'axis': {'range': [0, df['Total_Potential_Savings'].max()]}}
+    ))
+    st.plotly_chart(gauge, use_container_width=True)
 
 # =============================================
 # APP ENTRY
